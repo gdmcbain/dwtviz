@@ -20,8 +20,9 @@ def dwtviz(signal, wavelet='db1', cmap_name='Blues'):
 def dwt_heatmap(coefs, ax, cmap_name):
     ax.set_xticks([])
 
-    ax.set_yticks([(i / 9) - (1 / 18) for i in range(1, len(coefs))])
-    ax.set_yticklabels(reversed(range(len(coefs))))
+    ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
+                   for i in range(len(coefs), 0, -1)])
+    ax.set_yticklabels(range(1, len(coefs) + 1))
     ax.set_ylabel('levels')
 
     norm = col.Normalize(vmin=min(chain(*coefs)), vmax=max(chain(*coefs)))
