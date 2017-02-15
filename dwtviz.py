@@ -5,24 +5,34 @@ import matplotlib.colors as col
 import matplotlib.colorbar as colbar
 from itertools import chain
 
-def dwtviz(signal, wavelet='db1', cmap_name='Blues'):
-    coefs = pywt.wavedec(signal, wavelet)[1:]  # drop appox coef
+def dwtviz(signal, wavelet='db1', cmap_name='Blues', level=None, approx=None):
+    coefs = pywt.wavedec(signal, wavelet, level=level)
+
+    if approx is None:
+        approx = level is not None
+
+    if not approx:
+        coefs = coefs[1:]
+
     f, ax = plt.subplots(2)
     f.subplots_adjust(hspace=0.025)
 
-    dwt_heatmap(coefs, ax[0], cmap_name)
+    dwt_heatmap(coefs, ax[0], cmap_name, approx)
     ax[0].set_title('wavelet coefficient heatmap')
     ax[1].plot(signal)
     ax[1].set_xlim([0, len(signal)])
     ax[1].set_title('signal', y = -0.15)
     return f
 
-def dwt_heatmap(coefs, ax, cmap_name):
+def dwt_heatmap(coefs, ax, cmap_name, approx):
     ax.set_xticks([])
 
     ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
                    for i in range(len(coefs), 0, -1)])
-    ax.set_yticklabels(range(1, len(coefs) + 1))
+    if not approx:
+        ax.set_yticklabels(range(1, len(coefs) + 1))
+    else:
+        ax.set_yticklabels(['approx'] + list(range(1, len(coefs))))
     ax.set_ylabel('levels')
 
     norm = col.Normalize(vmin=min(chain(*coefs)), vmax=max(chain(*coefs)))
