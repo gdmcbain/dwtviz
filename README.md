@@ -4,6 +4,10 @@ This library creates a visualization of a discrete wavelet transform of a signal
 It vertically aligns the signal and heatmap to help the viewer gain an intuition
 for how the wavelet coefficients relate to the signal.
 
+#### Installation
+
+`pip install dwtviz`
+
 #### Simple Useage
 
 ```.py
