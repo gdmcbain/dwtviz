@@ -6,19 +6,22 @@ for how the wavelet coefficients relate to the signal.
 
 #### Installation
 
-`pip install dwtviz`
+```
+pip install dwtviz
+```
 
 #### Simple Useage
 
 ```.py
 import numpy as np
 
+# generate signal
 x = np.linspace(0, np.pi * 2, 128)
 signal = np.sin(6 * x) + 3 * np.sin(x) + np.random.normal(0, .3, 128)
 
 from dwtviz import dwtviz
-dwtviz(signal)
 
+# generate visualization
 fig = dwtviz(signal)
 fig.show()
 ```
