@@ -24,10 +24,11 @@ def dwtviz(signal, wavelet='db1', level=None, approx=None, cmap_name='seismic'):
         on the heatmap. Defaults to false if level is None, true otherwise.
 
     cmap_name:
-        The matplotlib colormap to use. Defaults to seismic. I recommend using
-        a divergent colormap so that negative numbers are evident.
+        The name of the matplotlib colormap to use. Defaults to seismic. I
+        recommend using a divergent colormap so that negative numbers are
+        evident.
 
-    returs:
+    returns:
     -----
     f:
         A matplotlib figure containing a heatmap of the wavelet coefficients and
@@ -53,7 +54,6 @@ def dwtviz(signal, wavelet='db1', level=None, approx=None, cmap_name='seismic'):
     return f
 
 def dwt_heatmap(coefs, ax, cmap_name, approx, max_level):
-    print(max_level)
     ax.set_xticks([])
 
     ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
