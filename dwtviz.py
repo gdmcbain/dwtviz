@@ -5,8 +5,8 @@ import matplotlib.colors as col
 import matplotlib.colorbar as colbar
 from itertools import chain
 
-def dwtviz(signal, wavelet='db1', level=None, cmap_name='Blues'):
-    coefs = pywt.wavedec(signal, wavelet, level=level)[1:]  # drop appox coef
+def dwtviz(signal, wavelet='db1', cmap_name='Blues'):
+    coefs = pywt.wavedec(signal, wavelet)[1:]  # drop appox coef
     f, ax = plt.subplots(2)
     f.subplots_adjust(hspace=0.025)
 
