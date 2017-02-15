@@ -18,11 +18,13 @@ def dwtviz(signal, wavelet='db1', level=None, cmap_name='BuPu'):
 def dwt_heatmap(coefs, ax, cmap_name):
     ax.set_xticklabels([])
     ax.set_yticklabels([])
-    norm = col.Normalize(vmin=min(chain(*coefs)), vmax=max(chain(*coefs)))
+    chained_coefs = np.array(list(chain(*coefs)))
+    norm = col.Normalize(vmin=np.min(chained_coefs), vmax=np.max(chained_coefs))
     cmap = plt.get_cmap(cmap_name)
 
-    cbar_axis = ax.figure.add_subplot(222)
-    colbar.ColorbarBase(cbar_axis, cmap_name, norm)
+    colbar_axis = colbar.make_axes(ax.figure.axes, 'right')
+    colbar.ColorbarBase(colbar_axis[0], cmap)
+    
 
     height = 1 / len(coefs)
     for level, coef_level in enumerate(coefs):
