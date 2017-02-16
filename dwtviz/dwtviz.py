@@ -1,3 +1,4 @@
+import collections
 import pywt
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
@@ -5,12 +6,12 @@ import matplotlib.colors as col
 import matplotlib.colorbar as colbar
 from itertools import chain
 
-def dwtviz(signal, wavelet='db1', level=None, approx=None, cmap_name='seismic'):
+def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic'):
     """
     params:
     -----
     signal:
-        The signal to be decomposed.
+        The signal or signals to be decomposed.
 
     wavelet:
         The wavelet to use. This can be either a string or a pywt.Wavelet object.
@@ -34,26 +35,37 @@ def dwtviz(signal, wavelet='db1', level=None, approx=None, cmap_name='seismic'):
         A matplotlib figure containing a heatmap of the wavelet coefficients and
         a plot of the signal.
     """
-    coefs = pywt.wavedec(signal, wavelet, level=level)
+
+    # if we just have one signal, put it in a list
+    if not isinstance(signals[0], collections.Iterable):
+        signals = [signals]
 
     if approx is None:
         approx = level is not None
 
-    if not approx:
-        coefs = coefs[1:]
-
-    f, ax = plt.subplots(2)
+    f, ax = plt.subplots(((len(signals) + 1) // 2) * 2, min(2, len(signals)), squeeze=False, figsize=(15, 6))
     f.subplots_adjust(hspace=0.025)
 
-    max_level = pywt.dwt_max_level(len(signal), pywt.Wavelet(wavelet).dec_len)
-    dwt_heatmap(coefs, ax[0], cmap_name, approx, max_level)
-    ax[0].set_title('wavelet coefficient heatmap')
-    ax[1].plot(signal)
-    ax[1].set_xlim([0, len(signal)])
-    ax[1].set_title('signal', y = -0.15)
+    for i, signal in enumerate(signals):
+        coefs = pywt.wavedec(signal, wavelet, level=level)
+        if not approx:
+            coefs = coefs[1:]
+        max_level = pywt.dwt_max_level(len(signal), pywt.Wavelet(wavelet).dec_len)
+
+        row = (i // 2) * 2
+        col = i % 2
+
+        heatmap_ax = ax[row][col]
+        signal_ax = ax[row + 1][col]
+
+        dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax)
+        heatmap_ax.set_title('wavelet coefficient heatmap')
+        signal_ax.plot(signal)
+        signal_ax.set_xlim([0, len(signal)])
+        signal_ax.set_title('signal', y = -0.20)
     return f
 
-def dwt_heatmap(coefs, ax, cmap_name, approx, max_level):
+def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
     ax.set_xticks([])
 
     ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
@@ -77,7 +89,7 @@ def dwt_heatmap(coefs, ax, cmap_name, approx, max_level):
     norm = col.Normalize(vmin=-limit, vmax=limit)
     cmap = plt.get_cmap(cmap_name)
 
-    colbar_axis = colbar.make_axes(ax.figure.axes, 'right')
+    colbar_axis = colbar.make_axes([ax, sig_ax], 'right')
     colbar.ColorbarBase(colbar_axis[0], cmap, norm)
 
     height = 1 / len(coefs)
