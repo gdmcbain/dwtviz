@@ -1,5 +1,6 @@
 import collections
 import pywt
+import matplotlib.gridspec as grd
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
 import matplotlib.colors as col
@@ -43,26 +44,31 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
     if approx is None:
         approx = level is not None
 
-    f, ax = plt.subplots(((len(signals) + 1) // 2) * 2, min(2, len(signals)), squeeze=False, figsize=(15, 6))
-    f.subplots_adjust(hspace=0.025)
+    nrows = (len(signals) + 1) // 2
+    ncols = min(2, len(signals))
+    f = plt.figure(figsize=(8 * ncols, 5 * nrows))
+
+    outer_gs = grd.GridSpec(nrows, ncols, hspace=.3, wspace=.1)
 
     for i, signal in enumerate(signals):
+        row = i // 2
+        col = i % 2
+
+        gs = grd.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_gs[row, col], hspace=0.07)
+        
         coefs = pywt.wavedec(signal, wavelet, level=level)
         if not approx:
             coefs = coefs[1:]
         max_level = pywt.dwt_max_level(len(signal), pywt.Wavelet(wavelet).dec_len)
 
-        row = (i // 2) * 2
-        col = i % 2
-
-        heatmap_ax = ax[row][col]
-        signal_ax = ax[row + 1][col]
+        heatmap_ax = plt.subplot(gs[0, 0])
+        signal_ax = plt.subplot(gs[1, 0])
 
         dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax)
         heatmap_ax.set_title('wavelet coefficient heatmap')
         signal_ax.plot(signal)
         signal_ax.set_xlim([0, len(signal)])
-        signal_ax.set_title('signal', y = -0.20)
+        signal_ax.set_title('signal', y = -0.30)
     return f
 
 def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
