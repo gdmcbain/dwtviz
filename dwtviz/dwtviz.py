@@ -38,7 +38,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
     """
 
     # if we just have one signal, put it in a list
-    if not isinstance(signals[0], collections.Iterable):
+    if type(signals) != list:
         signals = [signals]
 
     if approx is None:
@@ -56,7 +56,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
 
         gs = grd.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_gs[row, col], hspace=0.07)
         
-        coefs = pywt.wavedec(signal, wavelet, level=level)
+        coefs = pywt.wavedec(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
         if not approx:
             coefs = coefs[1:]
         max_level = pywt.dwt_max_level(len(signal), pywt.Wavelet(wavelet).dec_len)
@@ -66,8 +66,8 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
 
         dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax)
         heatmap_ax.set_title('wavelet coefficient heatmap')
-        signal_ax.plot(signal)
-        signal_ax.set_xlim([0, len(signal) - 1])
+        signal_ax.plot(*signal if type(signal) == tuple else signal)
+        signal_ax.set_xlim([max(signal[0]), min(signal[0])] if type(signal) == tuple else [0, len(signal) - 1])
         signal_ax.set_xticks([])
         signal_ax.set_title('signal', y = -0.25)
     return f
