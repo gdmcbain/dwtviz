@@ -59,7 +59,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
         coefs = pywt.wavedec(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
         if not approx:
             coefs = coefs[1:]
-        max_level = pywt.dwt_max_level(len(signal), pywt.Wavelet(wavelet).dec_len)
+        max_level = pywt.dwt_max_level(len(signal[1] if isinstance(signal, tuple) else signal), pywt.Wavelet(wavelet).dec_len)
 
         heatmap_ax = plt.subplot(gs[0, 0])
         signal_ax = plt.subplot(gs[1, 0])
