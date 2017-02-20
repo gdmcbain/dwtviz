@@ -65,11 +65,9 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
         signal_ax = plt.subplot(gs[1, 0])
 
         dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax)
-        heatmap_ax.set_title('wavelet coefficient heatmap')
         signal_ax.plot(*signal if type(signal) == tuple else signal)
         signal_ax.set_xlim([min(signal[0]), max(signal[0])] if type(signal) == tuple else [0, len(signal) - 1])
         signal_ax.set_xticks([])
-        signal_ax.set_title('signal', y = -0.25)
     return f
 
 def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
