@@ -1,3 +1,5 @@
+from functools import partial
+from multiprocessing import cpu_count, Pool
 import sklearn.gaussian_process as sgp
 import datetime
 import numpy as np
@@ -50,7 +52,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
 
     nrows = (len(signals) + 1) // 2
     ncols = min(2, len(signals))
-    f = plt.figure(figsize=(8 * ncols, 5 * nrows))
+    f = plt.figure(figsize=(10 * ncols, 7 * nrows))
 
     outer_gs = grd.GridSpec(nrows, ncols, hspace=.3, wspace=.1)
 
@@ -58,7 +60,8 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
         row = i // 2
         col = i % 2
 
-        gs = grd.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_gs[row, col], hspace=0.07)
+        gs = grd.GridSpecFromSubplotSpec(2, 1,
+                    subplot_spec=outer_gs[row, col], hspace=0.2)
         
         if decomposition == 'dwt':
             coefs = pywt.wavedec(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
@@ -86,7 +89,8 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
     return f
 
 def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
-    #ax.set_xticks([])
+    ax.set_xticks(np.array(list(range(0, len(coefs[0]), 5))) / len(coefs[0]))
+    ax.set_xticklabels(range(0, len(coefs[-1]), 5))
 
     ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
                    for i in range(len(coefs), 0, -1)])
@@ -146,36 +150,38 @@ def fit_gps(signals, length=None, num_samples=256, kernel=None):
         )
     gp = sgp.GaussianProcessRegressor(kernel=kernel, alpha=5, n_restarts_optimizer=12)
 
-    gp_signals = []
-    truncated_signals = []
-
     if length is None:
         longest = max(max(x) for x, y in signals)
     else:
         longest = length
 
-    for x, y in signals:
-        x = np.array(x).reshape(-1, 1)
-        y = np.array(y).reshape(-1, 1)
-        
-        gp.fit(x, y)
-        xnew = np.linspace(0, longest, num_samples).reshape(-1, 1)
-        ynew = gp.predict(xnew).flatten()
-        
-        length = max(x) - min(x)
+    fit_gp_to_length = partial(fit_gp, longest, gp, num_samples)
+    with Pool(cpu_count() - 1) as p:
+        results = p.map(fit_gp_to_length, signals)
+    return zip(*results)
 
-        if length is None:
-            prop = length[0] / longest
-        else:
-            prop = 1
-        
-        i = int(np.log2(1/prop)) + 1
-        end = num_samples // (2**i)
-        gp_signals.append((xnew[:end].flatten(), ynew[:end]))
-        truncated_xs = [a for a in x.flatten() if a <= longest // (2 ** i)]
-        truncated_signals.append((truncated_xs, y[:len(truncated_xs)].flatten()))
-        
-    return (gp_signals, truncated_signals)
+def fit_gp(longest, gp, num_samples, signal):
+    x, y = signal
+    x = np.array(x).reshape(-1, 1)
+    y = np.array(y).reshape(-1, 1)
+
+    gp.fit(x, y)
+    xnew = np.linspace(0, longest, num_samples).reshape(-1, 1)
+    ynew = gp.predict(xnew).flatten()
+
+    length = max(x) - min(x)
+
+    if length is None:
+        prop = length[0] / longest
+    else:
+        prop = 1
+
+    i = int(np.log2(1/prop)) + 1
+    end = num_samples // (2**i)
+    gp_signal = (xnew[:end].flatten(), ynew[:end])
+    truncated_xs = [a for a in x.flatten() if a <= longest // (2 ** i)]
+    truncated_signal = (truncated_xs, y[:len(truncated_xs)].flatten())
+    return (gp_signal, truncated_signal)
 
 def add_original_scatter(signals, dwtviz_fig, xseconds=True):
     for i, s in enumerate(signals):
