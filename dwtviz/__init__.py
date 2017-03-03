@@ -1,2 +1,2 @@
-from .dwtviz import dwtviz
+from .dwtviz import dwtviz, dwtviz_gp
 
