@@ -132,7 +132,7 @@ def dwtviz_gp(signals, length=None, samples=8, kernel=None, xseconds=True, decom
     num_samples = 2 ** samples
     gp_signals, truncated_signals = fit_gps(signals, length, num_samples, kernel)
     
-    fig = dwtviz(gp_signals, decomposition=decomposition)
+    fig = dwtviz(list(gp_signals), decomposition=decomposition)
     
     fig = add_original_scatter(truncated_signals, fig, xseconds)
     return fig
