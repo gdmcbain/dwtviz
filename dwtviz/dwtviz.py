@@ -10,7 +10,8 @@ import matplotlib.colors as col
 import matplotlib.colorbar as colbar
 from itertools import chain
 
-def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic'):
+def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
+           decomposition='dwt'):
     """
     params:
     -----
@@ -59,9 +60,14 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
 
         gs = grd.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_gs[row, col], hspace=0.07)
         
-        coefs = pywt.wavedec(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
-        if not approx:
-            coefs = coefs[1:]
+        if decomposition == 'dwt':
+            coefs = pywt.wavedec(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
+            if not approx:
+                coefs = coefs[1:]
+        elif decomposition == 'swt':
+            coefs = pywt.swt(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
+            coefs = [c[1] for c in coefs] 
+
         max_level = pywt.dwt_max_level(len(signal[1] if isinstance(signal, tuple) else signal), pywt.Wavelet(wavelet).dec_len)
 
         heatmap_ax = plt.subplot(gs[0, 0])
@@ -80,7 +86,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic')
     return f
 
 def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
-    ax.set_xticks([])
+    #ax.set_xticks([])
 
     ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
                    for i in range(len(coefs), 0, -1)])
@@ -99,7 +105,7 @@ def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
  
     ax.set_ylabel('levels')
 
-    limit = max(abs(f(chain(*coefs))) for f in (max, min))
+    limit = 50 # max(abs(f(chain(*coefs))) for f in (max, min))
     norm = col.Normalize(vmin=-limit, vmax=limit)
     cmap = plt.get_cmap(cmap_name)
 
@@ -115,14 +121,14 @@ def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
             heat_square = pat.Rectangle(bottom_left, width, height, color=color)
             ax.add_patch(heat_square)
 
-def dwtviz_gp(signals, length=None, samples=8, kernel=None, xseconds=True):
+def dwtviz_gp(signals, length=None, samples=8, kernel=None, xseconds=True, decomposition='dwt'):
     """
     signals: a list of tuples, where the first element is X values and the second is Y values.
     """
     num_samples = 2 ** samples
     gp_signals, truncated_signals = fit_gps(signals, length, num_samples, kernel)
     
-    fig = dwtviz(gp_signals)
+    fig = dwtviz(gp_signals, decomposition=decomposition)
     
     fig = add_original_scatter(truncated_signals, fig, xseconds)
     return fig
