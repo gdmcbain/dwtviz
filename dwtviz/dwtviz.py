@@ -13,7 +13,7 @@ import matplotlib.colorbar as colbar
 from itertools import chain
 
 def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
-           decomposition='dwt'):
+           decomposition='dwt', limit=50, xyplot=False):
     """
     params:
     -----
@@ -25,7 +25,8 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
 
     levels:
         The number of levels to which the signal will be decomposed. Defaults to
-        the maximum decomposition depth.
+        the maximum decomposition depth
+    .
 
     approx:
         Boolean indicating whether the approximation coefficients will show up
@@ -50,18 +51,26 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
     if approx is None:
         approx = level is not None
 
-    nrows = (len(signals) + 1) // 2
+    if xyplot:
+        nrows = len(signals)
+    else:
+        nrows = (len(signals) + 1) // 2
+
     ncols = min(2, len(signals))
     f = plt.figure(figsize=(10 * ncols, 7 * nrows))
 
     outer_gs = grd.GridSpec(nrows, ncols, hspace=.3, wspace=.1)
 
     for i, signal in enumerate(signals):
-        row = i // 2
-        col = i % 2
+        if xyplot:
+            row = i
+            col = 0
+        else:
+            row = i // 2
+            col = i % 2
 
         gs = grd.GridSpecFromSubplotSpec(2, 1,
-                    subplot_spec=outer_gs[row, col], hspace=0.2)
+                       subplot_spec=outer_gs[row, col], hspace=0.2)
         
         if decomposition == 'dwt':
             coefs = pywt.wavedec(signal[1] if isinstance(signal, tuple) else signal, wavelet, level=level)
@@ -73,10 +82,24 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
 
         max_level = pywt.dwt_max_level(len(signal[1] if isinstance(signal, tuple) else signal), pywt.Wavelet(wavelet).dec_len)
 
+        if xyplot:
+            gs2 = grd.GridSpecFromSubplotSpec(len(coefs), 1,
+                                              subplot_spec=outer_gs[row, 1], hspace=0.1)
+
+            y_axis = (np.max(coefs) + 1, np.min(coefs) - 1)
+            for j, c in enumerate(coefs):
+                ax = plt.subplot(gs2[j, 0])
+                ax.set_ylim(y_axis)
+                ax.plot(c)
+                ax.set_yticks([])
+                ax.set_xticks([])
+                ax.set_ylabel(j + 1, rotation=0)
+
         heatmap_ax = plt.subplot(gs[0, 0])
         signal_ax = plt.subplot(gs[1, 0])
 
-        dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax)
+        #TODO: Calculate limit from data; make common to all plots
+        dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax, limit)
         if type(signal) == tuple:
             signal_ax.plot(*signal)
         else:
@@ -88,7 +111,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
         heatmap_ax.set_title(i)
     return f
 
-def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
+def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax, limit):
     ax.set_xticks(np.array(list(range(0, len(coefs[0]), 5))) / len(coefs[0]))
     ax.set_xticklabels(range(0, len(coefs[-1]), 5))
 
@@ -109,7 +132,7 @@ def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
  
     ax.set_ylabel('levels')
 
-    limit = 50 # max(abs(f(chain(*coefs))) for f in (max, min))
+    # limit = 50 # max(abs(f(chain(*coefs))) for f in (max, min))
     norm = col.Normalize(vmin=-limit, vmax=limit)
     cmap = plt.get_cmap(cmap_name)
 
@@ -125,14 +148,14 @@ def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax):
             heat_square = pat.Rectangle(bottom_left, width, height, color=color)
             ax.add_patch(heat_square)
 
-def dwtviz_gp(signals, length=None, samples=8, kernel=None, xseconds=True, decomposition='dwt'):
+def dwtviz_gp(signals, length=None, samples=8, kernel=None, xseconds=True,
+              decomposition='dwt', limit=50):
     """
     signals: a list of tuples, where the first element is X values and the second is Y values.
     """
-    num_samples = 2 ** samples
-    gp_signals, truncated_signals = fit_gps(signals, length, num_samples, kernel)
+    gp_signals, truncated_signals = fit_gps(signals, length, samples, kernel)
     
-    fig = dwtviz(list(gp_signals), decomposition=decomposition)
+    fig = dwtviz(list(gp_signals), decomposition=decomposition, limit=limit)
     
     fig = add_original_scatter(truncated_signals, fig, xseconds)
     return fig
@@ -141,7 +164,7 @@ def seconds_converter(seconds, _):
     return str(datetime.timedelta(seconds=seconds))
 seconds_formater = mtk.FuncFormatter(seconds_converter)
 
-def fit_gps(signals, length=None, num_samples=256, kernel=None):
+def fit_gps(signals, length=None, samples=8, kernel=None):
     if kernel is None:
         kernel = ( 
                 sgp.kernels.ConstantKernel(1) * sgp.kernels.RBF(1e7, (1e6, 1e8))        
@@ -155,7 +178,7 @@ def fit_gps(signals, length=None, num_samples=256, kernel=None):
     else:
         longest = length
 
-    fit_gp_to_length = partial(fit_gp, longest, gp, num_samples)
+    fit_gp_to_length = partial(fit_gp, longest, gp, 2**samples)
     with Pool(cpu_count() - 1) as p:
         results = p.map(fit_gp_to_length, signals)
     return zip(*results)
