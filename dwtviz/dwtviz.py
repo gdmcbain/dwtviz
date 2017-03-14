@@ -86,7 +86,7 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
             gs2 = grd.GridSpecFromSubplotSpec(len(coefs), 1,
                                               subplot_spec=outer_gs[row, 1], hspace=0.1)
 
-            y_axis = (np.max(coefs) + 1, np.min(coefs) - 1)
+            y_axis = (np.min(coefs) - 1, np.max(coefs) + 1)
             for j, c in enumerate(coefs):
                 ax = plt.subplot(gs2[j, 0])
                 ax.set_ylim(y_axis)
