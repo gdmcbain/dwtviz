@@ -209,7 +209,9 @@ def fit_gp(longest, gp, num_samples, signal):
 def add_original_scatter(signals, dwtviz_fig, xseconds=True, xyplot=False):
     for i, s in enumerate(signals):
         if xyplot:
-            plot_index = 7 + (i * 9)
+            # TODO: this will only work for 6-level decompositions
+            # generalize to arbitrarily deep decompositions
+            plot_index = 7 + (i * 9)  
         else:
             plot_index = 1 + (i * 3)
         ax = dwtviz_fig.axes[plot_index]
