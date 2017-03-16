@@ -149,15 +149,15 @@ def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax, limit):
             ax.add_patch(heat_square)
 
 def dwtviz_gp(signals, length=None, samples=8, kernel=None, xseconds=True,
-              decomposition='dwt', limit=50):
-    """
+              decomposition='dwt', limit=50, xyplot=False):
+    """eu
     signals: a list of tuples, where the first element is X values and the second is Y values.
     """
     gp_signals, truncated_signals = fit_gps(signals, length, samples, kernel)
     
-    fig = dwtviz(list(gp_signals), decomposition=decomposition, limit=limit)
+    fig = dwtviz(list(gp_signals), decomposition=decomposition, limit=limit, xyplot=xyplot)
     
-    fig = add_original_scatter(truncated_signals, fig, xseconds)
+    fig = add_original_scatter(truncated_signals, fig, xseconds, xyplot=xyplot)
     return fig
 
 def seconds_converter(seconds, _):
@@ -206,9 +206,13 @@ def fit_gp(longest, gp, num_samples, signal):
     truncated_signal = (truncated_xs, y[:len(truncated_xs)].flatten())
     return (gp_signal, truncated_signal)
 
-def add_original_scatter(signals, dwtviz_fig, xseconds=True):
+def add_original_scatter(signals, dwtviz_fig, xseconds=True, xyplot=False):
     for i, s in enumerate(signals):
-        ax = dwtviz_fig.axes[1 + (i * 3)]
+        if xyplot:
+            plot_index = 7 + (i * 9)
+        else:
+            plot_index = 1 + (i * 3)
+        ax = dwtviz_fig.axes[plot_index]
         if xseconds:
             ax.xaxis.set_major_formatter(seconds_formater)
         xs = s[0]
