@@ -13,7 +13,7 @@ import matplotlib.colorbar as colbar
 from itertools import chain
 
 def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
-           decomposition='dwt', limit=50, xyplot=False):
+           decomposition='dwt', limit=50, xyplot=False, index=True):
     """
     params:
     -----
@@ -109,7 +109,8 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
         signal_ax.set_xlim([min(signal[0]), max(signal[0])] if type(signal) == tuple else [0, len(signal) - 1])
         signal_ax.set_xticks([])
 
-        heatmap_ax.set_title(i)
+        if index:
+            heatmap_ax.set_title(i)
     return f
 
 def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax, limit):
