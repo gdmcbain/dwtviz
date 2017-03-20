@@ -53,10 +53,11 @@ def dwtviz(signals, wavelet='db1', level=None, approx=None, cmap_name='seismic',
 
     if xyplot:
         nrows = len(signals)
+        ncols = 2
     else:
+        ncols = min(2, len(signals))
         nrows = (len(signals) + 1) // 2
 
-    ncols = min(2, len(signals))
     f = plt.figure(figsize=(10 * ncols, 7 * nrows))
 
     outer_gs = grd.GridSpec(nrows, ncols, hspace=.3, wspace=.1)
