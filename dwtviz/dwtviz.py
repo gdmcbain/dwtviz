@@ -81,11 +81,13 @@ def dwtviz(signals,
             if not approx:
                 coefs = coefs[1:]
         elif decomposition == 'swt':
-            coefs = pywt.swt(
+            swt_decomp = pywt.swt(
                 signal[1] if isinstance(signal, tuple) else signal,
                 wavelet,
                 level=level)
-            coefs = [c[1] for c in coefs]
+            coefs = [c[1] for c in swt_decomp]
+            if approx:
+                coefs = [swt_decomp[0][0]] + coefs
         all_coefs.append(coefs)
 
     cbar_limit = cbar_limit if cbar_limit is not None else max(
