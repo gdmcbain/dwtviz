@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='dwtviz',
-    version='0.0.10',
+    version='0.0.11',
     description='Creates visualizations for discrete wavelet transforms',
     url='https://github.com/n-s-f/dwtviz',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
