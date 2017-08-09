@@ -21,6 +21,8 @@ def dwtviz(signals,
            decomposition='dwt',
            cbar_limit=None,
            xyplot=False,
+           xticks=True,
+           yticks=True,
            index=True):
     """
     params:
@@ -80,7 +82,7 @@ def dwtviz(signals,
                 level=level)
             if not approx:
                 coefs = coefs[1:]
-        elif decomposition == 'swt':
+        elif decomposition == 'swt' or decomposition == 'sdwt':
             swt_decomp = pywt.swt(
                 signal[1] if isinstance(signal, tuple) else signal,
                 wavelet,
@@ -88,6 +90,25 @@ def dwtviz(signals,
             coefs = [c[1] for c in swt_decomp]
             if approx:
                 coefs = [swt_decomp[0][0]] + coefs
+
+            if decomposition == 'sdwt':
+                smallest = -np.max(np.abs(np.array(coefs)))
+                abbreviated = []
+                if approx:
+                    ap = np.ones_like(coefs[0]) * smallest
+                    part = coefs[0][:-(2**level - 1)]
+                    ap[:len(part)] = part
+                    abbreviated.append(ap)
+                    coefs = coefs[1:]
+
+                for l, c in enumerate(coefs):
+                    ap = np.ones_like(coefs[l]) * smallest
+                    part = coefs[l][:-(2**(level - l) - 1)]
+                    ap[:len(part)] = part
+                    abbreviated.append(ap)
+
+                coefs = abbreviated
+
         all_coefs.append(coefs)
 
     cbar_limit = cbar_limit if cbar_limit is not None else max(
@@ -125,7 +146,7 @@ def dwtviz(signals,
         signal_ax = plt.subplot(gs[1, 0])
 
         dwt_heatmap(coefs, heatmap_ax, cmap_name, approx, max_level, signal_ax,
-                    cbar_limit)
+                    cbar_limit, xticks, yticks)
         if type(signal) == tuple:
             signal_ax.plot(*signal)
         else:
@@ -140,25 +161,31 @@ def dwtviz(signals,
     return f
 
 
-def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax, cbar_limit):
-    ax.set_xticks(np.array(list(range(0, len(coefs[0]), 5))) / len(coefs[0]))
-    ax.set_xticklabels(range(0, len(coefs[-1]), 5))
+def dwt_heatmap(coefs, ax, cmap_name, approx, max_level, sig_ax, cbar_limit,
+                xticks, yticks):
+    if xticks:
+        ax.set_xticks(np.array(list(range(0, len(coefs[0]), 5))) / len(coefs[0]))
+        ax.set_xticklabels(range(0, len(coefs[-1]), 5))
+    else:
+        ax.set_xticks([])
 
-    ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
-                   for i in range(len(coefs), 0, -1)])
+    if yticks:
+        ax.set_yticks([(i / len(coefs)) - (1 / (len(coefs) * 2))
+                    for i in range(len(coefs), 0, -1)])
 
-    if not approx and len(coefs) == max_level:
-        ax.set_yticklabels(range(1, max_level + 1))
+        if not approx and len(coefs) == max_level:
+            ax.set_yticklabels(reversed(range(1, max_level + 1)))
 
-    elif approx and len(coefs) == max_level + 1:
-        ax.set_yticklabels(['approx'] + list(range(1, max_level + 1)))
+        elif approx and len(coefs) == max_level + 1:
+            labels = ['approx'] + list(reversed(range(1, max_level + 1)))
+            ax.set_yticklabels(labels)
 
-    elif not approx and len(coefs) != max_level:
-        ax.set_yticklabels(range(max_level - len(coefs) + 1, max_level + 1))
+        elif not approx and len(coefs) != max_level:
+            ax.set_yticklabels(range(max_level - len(coefs) + 1, max_level + 1))
 
-    elif approx and len(coefs) != max_level + 1:
-        ax.set_yticklabels(['approx'] + list(
-            range(max_level - len(coefs) + 2, max_level + 1)))
+        elif approx and len(coefs) != max_level + 1:
+            ax.set_yticklabels(['approx'] + list(
+                reversed(range(1, len(coefs)))))
 
     ax.set_ylabel('levels')
 
