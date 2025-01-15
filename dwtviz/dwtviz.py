@@ -52,8 +52,7 @@ def dwtviz(
         and a plot of the signal.
     """
 
-    # if we just have one signal, put it in a list
-    if type(signals) != list:
+    if not isinstance(signals, list):
         signals = [signals]
 
     if approx is None:
@@ -157,14 +156,14 @@ def dwtviz(
             xticks,
             yticks,
         )
-        if type(signal) == tuple:
+        if isinstance(signal, tuple):
             signal_ax.plot(*signal)
         else:
             signal_ax.plot(signal)
 
         signal_ax.set_xlim(
             [min(signal[0]), max(signal[0])]
-            if type(signal) == tuple
+            if isinstance(signal, tuple)
             else [0, len(signal) - 1]
         )
         signal_ax.set_xticks([])
